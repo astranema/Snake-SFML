@@ -2,12 +2,12 @@
 
 int main()
 {
-	sf::RenderWindow window( sf::VideoMode( { 200, 200 } ), "SFML works!" );
-	sf::CircleShape shape( 100.f );
-	shape.setFillColor( sf::Color::Magenta );
+
+	sf::RenderWindow window( sf::VideoMode( { 800, 800 } ), "Snake" );
 
 	while ( window.isOpen() )
 	{
+		// this is an = not an ==
 		while ( const std::optional event = window.pollEvent() )
 		{
 			if ( event->is<sf::Event::Closed>() )
@@ -15,7 +15,7 @@ int main()
 		}
 
 		window.clear();
-		window.draw( shape );
+		// all draws
 		window.display();
 	}
 }
