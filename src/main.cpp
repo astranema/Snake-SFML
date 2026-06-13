@@ -1,11 +1,57 @@
 #include <SFML/Graphics.hpp>
 
+class DoublyLinkedList {
+private:
+	Node* head;
+	Node* tail;
+public:
+	Node* get_head() {
+		return head;
+	}
+	void set_head(Node* node) {
+		this->head = node;
+	}
+	Node* get_tail() {
+		return tail;
+	}
+	void set_tail(Node* node) {
+		this->tail = node;
+	}
+};
+// node of doubly linked list
+class Node {
+private:
+	Coords coords;
+	Node* next;
+	Node* prev;
+public:
+	Node(int x, int y) {
+		this->coords = Coords(x, y);
+		next = nullptr;
+	}
+	Node* get_next() {
+		return next;
+	}
+	void set_next(Node* node) {
+		this->next = node;
+	}
+	Node* get_prev() {
+		return prev;
+	}
+	void set_next(Node* prev) {
+		this->prev = prev;
+	}
+};
 // coordinates with two ints. 
 class Coords {
 private:
 	int y;
 	int x;
 public:
+	Coords() {
+		set_x(0);
+		set_y(0);
+	}
 	Coords(int x, int y) {
 		set_x(x);
 		set_y(y);
