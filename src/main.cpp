@@ -1,4 +1,5 @@
 #include <SFML/Graphics.hpp>
+#include <iostream>
 
 // coordinates with two ints. 
 class Coords {
@@ -30,14 +31,17 @@ public:
 // node of doubly linked list
 class Node {
 private:
-	Coords coords;
+	Coords* coords;
 	Node* next;
 	Node* prev;
 public:
-	Node(int x, int y) {
-		this->coords = Coords(x, y);
+	Node() {
+		coords = nullptr;
 		next = nullptr;
-		prev = nullptr;
+	}
+	Node(int x, int y) {
+		this->coords = new Coords(x, y);
+		next = nullptr;
 	}
 	Node* get_next() {
 		return next;
@@ -45,41 +49,51 @@ public:
 	void set_next(Node* node) {
 		this->next = node;
 	}
-	Node* get_prev() {
-		return prev;
-	}
-	void set_prev(Node* node) {
-		this->prev = node;
+	Coords* get_coords() {
+		return this->coords;
 	}
 };
+/* 
+head = beginning of linked list
+tail = end of linked list
+next goes away from head towards tail
+*/
 class DoublyLinkedList {
 private:
 	Node* head;
 	Node* tail;
 public:
+	DoublyLinkedList() {
+		this->head = nullptr;
+		this->tail = nullptr;
+	}
 	Node* get_head() {
 		return head;
-	}
-	void set_head(Node* node) {
-		this->head = node;
 	}
 	Node* get_tail() {
 		return tail;
 	}
-	void set_tail(Node* node) {
-		this->tail = node;
+	void insert(Node* node) {
+		// old head points towards new head
+		if (head != nullptr) {
+			head->set_next(node);
+		}
+		// updating head and tail
+		head = node;
+		if (tail == nullptr) {
+			tail = node;
+		}
 	}
-	void push_head(Node* node) {
-		Node* old_head = this->get_head();
-		this->set_head(node);
-		node->set_next(old_head);
-		node->set_prev(nullptr);
-	}
-	void pop_tail() {
-		Node* old_tail = this->get_tail();
-		this->set_tail(old_tail->get_prev());
+	void service() {
+		if (tail == nullptr) {
+			return;
+		}
+		Node* old_tail = tail;
+		tail = tail->get_next();
 		delete old_tail;
-		this->get_tail()->set_next(nullptr);
+		if (tail == nullptr) {
+			head = nullptr;
+		}
 	}
 };
 
@@ -91,17 +105,23 @@ enum class Direction {
 };
 
 
-void render_square_from_coords(sf::RenderWindow &window, Coords coords, sf::Color color);
+void render_square_from_coords(sf::RenderWindow &window, Coords* coords, sf::Color color);
+void render_squares_from_node(sf::RenderWindow &window, Node* node, sf::Color color);
 
 int main()
 {
 	Direction direction = Direction::Right;
-	Coords apple_cords = Coords(7, 5);
+	Coords* apple_cords = new Coords(7, 5);
 	sf::RenderWindow window( sf::VideoMode( { 800, 800 } ), "Snake" );
-	
+	DoublyLinkedList* snake = new DoublyLinkedList();
+	snake->insert(new Node(2, 2));
+	snake->insert(new Node(3, 2));
+	snake->insert(new Node(6, 2));
+	int i = 0;
+
 	while ( window.isOpen() )
 	{
-		// checking if window must be closed
+		// checking for events
 		// this is an = not an ==
 		while ( const std::optional event = window.pollEvent() )
 		{
@@ -129,18 +149,52 @@ int main()
 				}
 			}
 		}
+		// run frame
+		if (i % 500 == 0) {
+			// get new node x and y;
+			Node* new_node = nullptr;
+			int old_x = snake->get_head()->get_coords()->get_x();
+			int old_y = snake->get_head()->get_coords()->get_y();
+			if (direction == Direction::Up) {
+				new_node = new Node(old_x, old_y - 1);
+			}
+			else if (direction == Direction::Down) {
+				new_node = new Node(old_x, old_y + 1);
+			}
+			else if (direction == Direction::Left) {
+				new_node = new Node(old_x - 1, old_y);
+			}
+			else if (direction == Direction::Right) {
+				new_node = new Node(old_x + 1, old_y);
+			}
+			snake->insert(new_node);
+			snake->service();
+		}
 
 		window.clear();
 		// draws apple
 		render_square_from_coords(window, apple_cords, sf::Color::Red);
+		// draw snake
+		render_squares_from_node(window, snake->get_tail(), sf::Color::Green);
 		window.display();
+
+		i += 1;
 	}
 }
 
-void render_square_from_coords(sf::RenderWindow &window, Coords coords, sf::Color color) {
+void render_square_from_coords(sf::RenderWindow &window, Coords* coords, sf::Color color) {
 	sf::RectangleShape square = sf::RectangleShape();
 	square.setSize(sf::Vector2f(80, 80));
-	square.setPosition(sf::Vector2f(static_cast<float>(80*coords.get_x()), static_cast<float>(80*coords.get_y())));
+	square.setPosition(sf::Vector2f(static_cast<float>(80*coords->get_x()), static_cast<float>(80*coords->get_y())));
 	square.setFillColor(color);
 	window.draw(square);
+}
+
+// recursive
+void render_squares_from_node(sf::RenderWindow &window, Node* node, sf::Color color) {
+	if (node == nullptr) {
+		return;
+	}
+	render_square_from_coords(window, node->get_coords(), color);
+	render_squares_from_node(window, node->get_next(), color);
 }
