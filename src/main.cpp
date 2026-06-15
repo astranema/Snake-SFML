@@ -114,9 +114,9 @@ int main()
 	Coords* apple_cords = new Coords(7, 5);
 	sf::RenderWindow window( sf::VideoMode( { 800, 800 } ), "Snake" );
 	DoublyLinkedList* snake = new DoublyLinkedList();
+	snake->insert(new Node(1, 2));
 	snake->insert(new Node(2, 2));
 	snake->insert(new Node(3, 2));
-	snake->insert(new Node(6, 2));
 	int i = 0;
 
 	while ( window.isOpen() )
@@ -167,8 +167,21 @@ int main()
 			else if (direction == Direction::Right) {
 				new_node = new Node(old_x + 1, old_y);
 			}
+			// inserting new node
 			snake->insert(new_node);
-			snake->service();
+			// getting collision with apple
+			if (new_node->get_coords()->get_x() == apple_cords->get_x() &&
+					new_node->get_coords()->get_y() == apple_cords->get_y())
+			{
+				int new_apple_x = (apple_cords->get_y() + 5) % 10;
+				int new_apple_y = (apple_cords->get_x() + 2) % 10;
+				delete apple_cords;
+				apple_cords = new Coords(new_apple_x, new_apple_y);
+			}
+			// getting rid of the tail if they didn't get the apple
+			else {
+				snake->service();
+			}
 		}
 
 		window.clear();
