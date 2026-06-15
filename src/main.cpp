@@ -107,10 +107,12 @@ enum class Direction {
 
 void render_square_from_coords(sf::RenderWindow &window, Coords* coords, sf::Color color);
 void render_squares_from_node(sf::RenderWindow &window, Node* node, sf::Color color);
+bool coord_is_in_list(Coords* coords, Node* head);
 
 int main()
 {
 	Direction direction = Direction::Right;
+	Direction prev_head_direction = Direction::Left;
 	Coords* apple_cords = new Coords(7, 5);
 	sf::RenderWindow window( sf::VideoMode( { 800, 800 } ), "Snake" );
 	DoublyLinkedList* snake = new DoublyLinkedList();
@@ -131,19 +133,19 @@ int main()
 			}
 			// managing keyboard inputs
 			if (const auto* key_pressed = event->getIf<sf::Event::KeyPressed>()) {
-				if (key_pressed->code == sf::Keyboard::Key::W)
+				if (key_pressed->code == sf::Keyboard::Key::W  && prev_head_direction != Direction::Up)
 				{
 					direction = Direction::Up;
 				}
-				if (key_pressed->code == sf::Keyboard::Key::S)
+				if (key_pressed->code == sf::Keyboard::Key::S && prev_head_direction != Direction::Down)
 				{
 					direction = Direction::Down;
 				}
-				if (key_pressed->code == sf::Keyboard::Key::D)
+				if (key_pressed->code == sf::Keyboard::Key::D && prev_head_direction != Direction::Right)
 				{
 					direction = Direction::Right;
 				}
-				if (key_pressed->code == sf::Keyboard::Key::A)
+				if (key_pressed->code == sf::Keyboard::Key::A && prev_head_direction != Direction::Left)
 				{
 					direction = Direction::Left;
 				}
@@ -167,16 +169,44 @@ int main()
 			else if (direction == Direction::Right) {
 				new_node = new Node(old_x + 1, old_y);
 			}
+			// checking for death
+			if (coord_is_in_list(new_node->get_coords(), snake->get_tail())) {
+				exit(0);
+			}
+			if (new_node->get_coords()->get_x() < 0 ||
+					new_node->get_coords()->get_x() > 9 ||
+					new_node->get_coords()->get_y() < 0 ||
+					new_node->get_coords()->get_y() > 9)
+			{
+				exit(0);
+			}
 			// inserting new node
 			snake->insert(new_node);
+			// managing prev_head
+			switch(direction) {
+				case Direction::Down:
+					prev_head_direction = Direction::Up;
+					break;
+				case Direction::Up:
+					prev_head_direction = Direction::Down;
+					break;
+				case Direction::Left:
+					prev_head_direction = Direction::Right;
+					break;
+				case Direction::Right:
+					prev_head_direction = Direction::Left;
+					break;
+			}
 			// getting collision with apple
 			if (new_node->get_coords()->get_x() == apple_cords->get_x() &&
 					new_node->get_coords()->get_y() == apple_cords->get_y())
 			{
-				int new_apple_x = (apple_cords->get_y() + 5) % 10;
-				int new_apple_y = (apple_cords->get_x() + 2) % 10;
-				delete apple_cords;
-				apple_cords = new Coords(new_apple_x, new_apple_y);
+				do {
+					int new_apple_x = (apple_cords->get_y() + 5) % 10;
+					int new_apple_y = (apple_cords->get_x() + 2) % 10;
+					delete apple_cords;
+					apple_cords = new Coords(new_apple_x, new_apple_y);
+				} while (coord_is_in_list(apple_cords, snake->get_tail()));
 			}
 			// getting rid of the tail if they didn't get the apple
 			else {
@@ -210,4 +240,21 @@ void render_squares_from_node(sf::RenderWindow &window, Node* node, sf::Color co
 	}
 	render_square_from_coords(window, node->get_coords(), color);
 	render_squares_from_node(window, node->get_next(), color);
+}
+
+// recursive
+bool coord_is_in_list(Coords* coords, Node* head) {
+	if (head == nullptr) {
+		return false;
+	}
+	// recursion
+	if (coord_is_in_list(coords, head->get_next())) {
+		return true;
+	}
+	if (coords->get_x() == head->get_coords()->get_x() &&
+			coords->get_y() == head->get_coords()->get_y())
+	{
+		return true;
+	}
+	return false;
 }
